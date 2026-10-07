@@ -1,209 +1,110 @@
 ## Hi there 👋
+<div align="center">
 
-# DataMatrix — Честный знак
+# Инженер-автоматизатор · Automation Engineer
 
+**RU:** Автоматизирую рутину вокруг маркировки «Честный знак» и Национального каталога:
+DataMatrix-коды, генерация импорт-файлов, парсинг, API-интеграции, Excel-отчёты.
+Активно использую ИИ-агентов (Claude Code) как полноценный инструмент разработки.
+
+**EN:** I build automation around product labeling («Chestny ZNAK» / GS1 DataMatrix),
+catalog management, and parsing pipelines — with AI agents (Claude Code) as a core part of my workflow.
+
+</div>
+
+---
+
+## 🛠 Технологии и инструменты · Tech stack
+
+![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/-React_18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/-Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Pandas](https://img.shields.io/badge/-pandas-150458?style=flat-square&logo=pandas&logoColor=white)
+![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white)
+![Postman](https://img.shields.io/badge/-Postman-FF6C37?style=flat-square&logo=postman&logoColor=white)
+![Excel](https://img.shields.io/badge/-Excel_/_VBA-217346?style=flat-square&logo=microsoft-excel&logoColor=white)
+![Claude](https://img.shields.io/badge/-Claude_Code-191919?style=flat-square&logo=anthropic&logoColor=white)
+![Git](https://img.shields.io/badge/-Git-F05032?style=flat-square&logo=git&logoColor=white)
+![Windows](https://img.shields.io/badge/-Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
+
+---
+
+## 🚀 Проекты · Projects
+
+### [dm-converter](https://github.com/ad620an/dm-converter) — генератор и декодер DataMatrix
 Веб-сервис для работы с кодами маркировки «Честный знак»:
+- **Генерация** GS1 DataMatrix ECC 200 — до 1000 кодов за раз из TXT/CSV/XLSX
+- **Печать** PDF-наклеек точных физических размеров
+- **Декодирование** DataMatrix из PDF/JPG/PNG (адаптивный рендер 200→400 DPI)
+- Полностью локальная обработка данных — ничего не уходит наружу
 
-- **Создание DataMatrix** — массовая генерация GS1 DataMatrix ECC 200 из символьных
-  последовательностей (TXT / CSV / XLSX, до 1000 строк) с печатью PDF-наклеек
-  точных физических размеров и экспортом ZIP с PNG.
-- **Декодирование DataMatrix** — поиск и декодирование всех DataMatrix из
-  PDF / JPG / PNG с восстановлением исходной байтовой последовательности и
-  экспортом в TXT / CSV.
+`Python` `FastAPI` `React 18` `TypeScript` `pylibdmtx` `PyMuPDF` `pytest`
 
-Полностью локальная обработка: файлы не покидают машину, результаты хранятся
-во временном хранилище со случайными именами и удаляются автоматически.
+### [chz-nk](https://github.com/ad620an/chz-nk) — генератор импорт-файлов для Национального каталога
+Автоматическое создание файлов загрузки товарных позиций (электронные компоненты:
+светодиоды, реле, оптопары, разъёмы) по кодам ТНВЭД + .docx-отчёты о загрузке.
+Включает предметную логику: например, маппинг артикулов светодиодов на ОКПД2 по длине волны из datasheet.
 
-Главный инвариант проекта (ТЗ §45):
+`Python` `openpyxl` `python-docx` `Excel`
 
-```text
-source bytes → DataMatrix encode → image / PDF → DataMatrix decode → decoded bytes
-source bytes === decoded bytes        # в частности 0x1D === 0x1D
-```
+### [nk_api](https://github.com/ad620an/nk_api) — клиент API Национального каталога
+Скрипты для работы в контуре «Честного знака»: генерация черновых GTIN,
+создание карточек товаров через feed-загрузку, контроль статусов фида.
+Развёрнутый справочник маппингов ТНВЭД → cat_id → ОКПД2 под пресеты каталога.
 
----
+`Python` `requests` `loguru` `API «Честного знака»`
 
-## Архитектура
+### [nk](https://github.com/ad620an/nk) — парсер Национального каталога
+Парсинг карточек товаров (национальный-каталог.рф) по брендам ABB, Schneider Electric, CHINT:
+дисковый кэш HTML-страниц, ретраи с экспоненциальными паузами,
+сборка оформленных сводных xlsx с воспроизведением структуры каталога.
 
-```text
-frontend/          React 18 + TypeScript + Vite (строгая светлая тема)
-  src/components/    CreateTab — вкладка создания, DecodeTab — вкладка декодирования
-  src/api.ts         клиент backend API
+`Python` `requests` `BeautifulSoup` `openpyxl`
 
-backend/           Python 3.9+ / FastAPI
-  app/main.py        REST API: /api/parse, /api/preview-label, /api/generate,
-                     /api/decode, /api/jobs/*, /api/decode/{id}/export
-  app/jobs.py        фоновые задачи с прогрессом (1000 кодов не блокируют UI)
-  app/core/
-    dm.py            бинарно-безопасные encode/decode DataMatrix ECC 200
-    gs1.py           разбор GS1 (AI 01/21/91/92), извлечение GTIN
-    display.py       визуализация <GS>, HEX, base64 — только для UI
-    parsers.py       импорт TXT/CSV/XLSX (UTF-8, BOM, CP1251; без trim и потерь)
-    labels.py        геометрия этикетки, live-preview, PDF (reportlab)
-    decoder.py       декодирование PNG/JPG и PDF (PyMuPDF + предобработки)
-  app/exporters.py   экспорт TXT/CSV (режимы original / readable)
+### [sub-agents](https://github.com/ad620an/sub-agents) — специализированные ИИ-агенты
+Песочница для проектирования субагентов Claude Code с собственными инструментами и
+инструкциями: агент `datamatrix-decoder` декодирует DataMatrix из изображений и PDF,
+учитывая граничные случаи (DLL на Windows, отсутствие Poppler, fallback-конвертации).
 
-backend/tests/     автоматические тесты pytest (§35) + фикстуры
-```
+`Claude Code` `Custom Agents` `pylibdmtx` `OpenCV`
 
-### Используемые библиотеки
+### [landing](https://github.com/ad620an/landing) — лендинг Winsen
+Одностраничный сайт поставщика газовых и пироэлектрических датчиков
+(электрохимические, каталитические, полупроводниковые, NDIR).
+Чистый HTML/CSS без фреймворков, SEO-метатеги, задел под англоязычную версию.
 
-| Библиотека | Назначение | Почему выбрана |
-|---|---|---|
-| **pylibdmtx** | генерация и декодирование DataMatrix ECC 200 | работает с `bytes` напрямую; scheme `Ascii` детерминированно кодирует 1 байт = 1 кодворд, **0x1D проходит цикл encode→decode без изменений** (подтверждено тестами до интеграции — ТЗ §34) |
-| **Pillow** | предобработка изображений, рендер PNG-наклеек | апскейл NEAREST — модули целыми пикселями, без сглаживания |
-| **PyMuPDF** | рендеринг страниц PDF для декодирования | рендер с нарастающим DPI 200→300→400 (§27) |
-| **openpyxl** | чтение XLSX | значения остаются строками: GTIN не превращается в число, нет scientific notation |
-| **reportlab** | генерация PDF | страницы точного физического размера в мм (§18) |
-| **FastAPI + uvicorn** | REST API | фоновые задачи, бинарно-безопасная передача через base64 |
+`HTML` `CSS` `SEO`
+
+### [seo_plt](https://github.com/ad620an/seo_plt) — SEO-аудит platan.ru
+Полный SEO-аудит интернет-магазина электронных компонентов: мета-теги, JSON-LD,
+canonical, скорость, мобильность — 11 страниц через headless Chromium.
+С честным разделом о границах методологии (что требует Ahrefs/Serpstat).
+
+`Claude Code` `MCP Playwright` `Headless Chromium`
 
 ---
 
-## Работа с ASCII 29 (GS, 0x1D) — критическое требование
+## 🎯 Чем занимаюсь · What I do
 
-**Как хранится.** Внутри приложения исходная последовательность существует
-только как `bytes`. Никакие строки не участвуют в пути данных: парсеры читают
-файл как байты (`raw.split(b"\n")`, без `trim()` и без регулярных выражений,
-чистящих управляющие символы), кодировщик получает `bytes`, декодер
-возвращает `bytes`. Между frontend и backend байты передаются в base64.
-
-**Как отображается.** `to_display()` (app/core/display.py) заменяет 0x1D на
-`<GS>` **только в представлении для UI** — исходные байты не изменяются
-(ТЗ §40: `rawBytes` — источник истины, `displayValue` — только интерфейс).
-HEX-режим показывает `1D` в дампе, панель деталей — позиции всех GS.
-
-**Как передаётся в encoder.** `encode_dm(data: bytes)` вызывает
-`pylibdmtx.encode` со схемой `Ascii`: байт 0x1D становится отдельным
-кодвордом без каких-либо замен. Никаких `[GS]`/`~`/пробелов.
-
-**Как возвращается decoder.** `decode_dm()` возвращает
-`[r.data for r in pylibdmtx.decode(...)]` — сырые байты; 0x1D остаётся 0x1D.
-Декодер не «додумывает» потерянные символы (ТЗ §29).
-
-**Как экспортируется.** В режиме «исходные символы» (по умолчанию) в TXT/CSV
-физически записывается байт 0x1D. Режим «читаемое представление» (только для
-просмотра) заменяет его на текст `<GS>`.
-
-**Каким тестом подтверждается.**
-
-- `backend/tests/test_roundtrip.py` — побайтовый round-trip
-  `ABC\x1DDEF` (41 42 43 **1D** 44 45 46), несколько GS с сохранением
-  позиций, эталонная строка ЧЗ, инвариант `decoded == source` для всех кейсов;
-- `test_import.py` / `test_fixtures.py` — 0x1D не теряется при импорте
-  TXT/CSV (эталонные файлы с настоящим 0x1D лежат в `backend/tests/fixtures/`);
-- `test_export.py` — 0x1D остаётся на исходной позиции после повторного
-  чтения экспортированного TXT/CSV;
-- `test_e2e.py` — полный цикл: строка ЧЗ → PDF/PNG → декодер → побайтовое
-  совпадение; многостраничный PDF с несколькими кодами.
-
-> Примечание: формат XLSX (XML 1.0) физически не допускает управляющие
-> символы в ячейках — Excel не может хранить 0x1D. Для кодов с GS используйте
-> TXT/CSV.
+- **Автоматизация «Честного знака»** — от генерации GTIN и DataMatrix до загрузки карточек в каталог
+- **Парсинг и ETL** — сбор данных с сайтов и API, чистка, сводная отчётность в Excel
+- **ИИ-агенты как инструмент** — проектирование рабочих процессов для Claude Code, кастомные субагенты, MCP
+- **Веб-разработка** — FastAPI-бэкенды, React/TypeScript-фронты, статические лендинги
+- **Аналитика** — SEO-аудиты, исследование рынка, структурированные отчёты
 
 ---
 
-## Запуск локально
+## 📈 Статистика · Stats
 
-Требуются Python 3.9+ и Node.js 18+.
-
-```bash
-# 1. Backend (терминал 1)
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --port 8000
-
-# 2. Frontend в режиме разработки (терминал 2)
-cd frontend
-npm install
-npm run dev          # http://localhost:5173, /api проксируется на :8000
-```
-
-Альтернатива без двух терминалов — собрать статику, тогда FastAPI отдаёт
-frontend сам на http://localhost:8000:
-
-```bash
-cd frontend && npm run build      # создаёт frontend/dist
-cd ../backend && uvicorn app.main:app --port 8000
-```
-
-### Тесты
-
-```bash
-cd backend
-python tests/make_fixtures.py     # (необязательно: создаются автоматически)
-python -m pytest tests -v
-```
-
-47 тестов: round-trip с 0x1D, импорт TXT/CSV/XLSX, GS1/GTIN, экспорт,
-end-to-end PDF/PNG, декодирование многостраничных PDF и реального образца
-из `samples/`.
+<div align="center">
+  <img height="160" src="https://github-readme-stats.vercel.app/api?username=ad620an&show_icons=true&locale=ru&hide_border=true&card_width=460" alt="GitHub stats" />
+  <img height="160" src="https://github-readme-stats.vercel.app/api/top-langs/?username=ad620an&layout=compact&locale=ru&hide_border=true&card_width=320" alt="Top languages" />
+</div>
 
 ---
 
-## Production deployment
-
-```bash
-# Сборка frontend
-cd frontend && npm ci && npm run build
-
-# Запуск backend со статикой (frontend/dist монтируется автоматически)
-cd ../backend
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
-```
-
-- **Windows-сервис / nssm**: `nssm install dm-converter "C:\...\python.exe" "-m uvicorn app.main:app --host 127.0.0.1 --port 8000"` (рабочая директория `backend`).
-- **Docker** (при необходимости): образ `python:3.12-slim`, скопировать `backend/` и `frontend/dist/`, `CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`. Для pylibdmtx в slim-образе понадобится `libdmtx0` (apt).
-- Обратный прокси (nginx): проксировать `/` на uvicorn; отдельный `/api` не требуется — API и статика живут в одном приложении.
-- Результаты задач хранятся во временном каталоге системы со случайными
-  именами и удаляются через час (ТЗ §32); загруженные файлы нигде не
-  сохраняются.
-
----
-
-## Формат входных и выходных файлов
-
-### Импорт (вкладка «Создать DataMatrix»)
-
-- **TXT**: один код на строку либо таблица `Код<TAB>Артикул<TAB>Количество`
-  (заголовок распознаётся автоматически). UTF-8 / UTF-8 BOM / CP1251.
-- **CSV**: разделитель `;` `,` или TAB — автоопределение; quoted-поля;
-  с заголовком и без. Колонка кода распознаётся по названию
-  (`Код`, `Код маркировки`, `DataMatrix`, `code`…) или по содержимому;
-  при неоднозначности открывается окно сопоставления колонок.
-- **XLSX**: первая строка — заголовок; все значения читаются как строки
-  (GTIN с ведущим нулём не превращается в число).
-- Поля `Артикул` и `Количество` необязательны. Лимит — 1000 строк.
-
-### Наклейка
-
-Размеры наклеек: 30×20, 40×20, 43×25, 50×30, 58×30, 58×40, 60×40 мм и
-пользовательский. Размер DataMatrix: автоматический или фиксированный
-(12/15/18/20/22/25 мм, пользовательский). Варианты текста: только DataMatrix /
-GTIN + первые 38 знаков / Артикул + Количество + GTIN + 38 знаков.
-PDF: одна наклейка = одна страница точного размера в мм; PNG: ZIP с
-`label_0001.png`, модули без сглаживания.
-
-### Результат декодирования
-
-- **TXT**: один DataMatrix на строку (в режиме «исходные символы» байт 0x1D
-  физически присутствует в файле).
-- **CSV**: `№; Страница; Код; GTIN; Файл; Статус` (UTF-8 с BOM для Excel).
-- Переключатель представления управляющих символов: **исходные символы**
-  (по умолчанию) / **читаемое** (`<GS>`).
-
----
-
-## API
-
-| Метод | Путь | Назначение |
-|---|---|---|
-| POST | `/api/parse` | импорт TXT/CSV/XLSX → предпросмотр строк, сопоставление колонок |
-| POST | `/api/preview-label` | PNG предпросмотр наклейки с реальными пропорциями |
-| POST | `/api/generate` | фоновая генерация PDF или ZIP-PNG (формат `pdf`/`pngzip`) |
-| POST | `/api/decode` | фоновое декодирование PDF/JPG/PNG |
-| GET | `/api/jobs/{id}` | статус задачи + прогресс + результаты |
-| GET | `/api/jobs/{id}/file` | скачивание результата генерации |
-| POST | `/api/decode/{id}/export` | экспорт результатов декодирования (TXT/CSV, режимы GS) |
-
-Документация интерактивно: http://localhost:8000/docs (Swagger UI).
+<div align="center">
+  <i>«Рутинная работа — это баг, а не фича» · "Manual work is a bug, not a feature"</i>
+</div>
